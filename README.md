@@ -1,6 +1,6 @@
 # FormAgent
 
-一个强大的动态表单引擎，支持复杂的字段规则、依赖关系和条件逻辑。
+一个强大的动态表单引擎，支持复杂的字段规则、依赖关系和条件逻辑。现已整合 LangChain 1.2，提供智能对话式表单管理能力。
 
 ## 功能特性
 
@@ -13,6 +13,14 @@
 - **多种字段类型**：支持 text、select、radio、hidden 等多种字段类型
 - **动态验证**：支持必填、禁用、可见性等动态属性控制
 
+### LangChain 整合特性
+
+- **智能对话接口**：通过自然语言与表单交互
+- **对话记忆**：支持持续性对话，记住上下文
+- **多会话管理**：支持创建和管理多个会话
+- **工具调用**：将表单操作封装为 LangChain 工具
+- **LLM 驱动**：使用大语言模型理解用户意图
+
 ### 高级特性
 
 - **日志控制**：多级别日志输出（无输出/错误/警告/调试/详细）
@@ -24,7 +32,37 @@
 
 ## 快速开始
 
+### 安装
+
+1. **克隆仓库**
+```bash
+git clone git@github.com:GCGH159/fromAgent.git
+cd FormAgent
+```
+
+2. **创建 Python 虚拟环境（Python 3.11）**
+```bash
+python -m venv venv
+# Windows
+venv\Scripts\activate
+# Linux/Mac
+source venv/bin/activate
+```
+
+3. **安装依赖**
+```bash
+pip install -r requirements.txt
+```
+
+4. **配置环境变量**
+```bash
+cp .env.example .env
+# 编辑 .env 文件，填入你的 OpenAI API Key
+```
+
 ### 基本使用
+
+#### 使用 DynamicFormEngine（核心引擎）
 
 ```python
 from agentFrom import DynamicFormEngine
@@ -60,6 +98,38 @@ engine.set_value("region", "cn-beijing")
 # 获取所有可见字段的值
 values = engine.get_visible_values()
 print(values)
+```
+
+#### 使用 LangChain Agent（智能对话）
+
+```python
+from app.core.form_agent import FormAgentWithMemory
+
+# 创建 Agent
+agent = FormAgentWithMemory()
+
+# 与 Agent 对话
+response = agent.chat("帮我加载一个表单结构，包含姓名、年龄等字段")
+print(response)
+
+response = agent.chat("设置姓名为张三")
+print(response)
+
+response = agent.chat("查看所有字段的值")
+print(response)
+```
+
+#### 命令行交互模式
+
+```bash
+# 启动交互模式
+python main.py
+
+# 运行演示模式
+python main.py --demo
+
+# 查看帮助
+python main.py --help
 ```
 
 ### 字段规则示例
@@ -101,6 +171,76 @@ schema = {
         }
     ]
 }
+```
+
+## LangChain Agent 使用指南
+
+### 可用工具
+
+FormAgent 提供以下 LangChain 工具：
+
+1. **load_schema** - 加载表单结构定义
+2. **set_field_value** - 设置字段值
+3. **get_field_value** - 获取字段值
+4. **get_all_values** - 获取所有可见字段的值（平铺格式）
+5. **get_all_values_tree** - 获取所有可见字段的值（嵌套树格式）
+6. **get_field_info** - 获取字段详细信息
+7. **list_all_fields** - 列出所有字段
+8. **set_field_visibility** - 设置字段可见性
+9. **set_field_required** - 设置字段是否必填
+10. **get_field_dependencies** - 获取字段依赖关系
+11. **get_affected_fields** - 获取受影响字段
+12. **set_log_level** - 设置日志级别
+
+### 对话示例
+
+```
+🤖 FormAgent > 帮我加载一个表单结构，包含姓名、年龄、区域等字段
+✅ 表单结构加载成功，共 3 个字段
+
+🤖 FormAgent > 设置姓名为张三
+✅ 字段 name 的值已设置为: 张三
+
+🤖 FormAgent > 设置年龄为25
+✅ 字段 age 的值已设置为: 25
+
+🤖 FormAgent > 把区域设置为杭州
+✅ 字段 region 的值已设置为: cn-hangzhou
+
+🤖 FormAgent > 查看所有字段的值
+✅ 所有可见字段的值:
+{
+  "name": "张三",
+  "age": 25,
+  "region": "cn-hangzhou"
+}
+
+🤖 FormAgent > 隐藏年龄字段
+✅ 字段 age 已设置为隐藏
+
+🤖 FormAgent > 设置姓名为必填
+✅ 字段 name 已设置为必填
+```
+
+### 会话管理
+
+```python
+from app.core.form_agent import create_session
+
+# 创建新会话
+agent = create_session()
+
+# 获取会话 ID
+session_id = agent.get_session_id()
+
+# 清空会话历史
+agent.clear_history()
+
+# 获取消息数量
+count = agent.get_message_count()
+
+# 获取会话信息
+info = agent.get_session_info()
 ```
 
 ## API 文档
@@ -160,6 +300,51 @@ values = engine.get_visible_values_tree()
 
 ```python
 engine.set_log_level(3)  # 开启调试日志
+```
+
+### FormAgentWithMemory 类
+
+#### 构造函数
+
+```python
+FormAgentWithMemory(session_id: Optional[str] = None)
+```
+
+**参数说明：**
+- `session_id`: 会话 ID，如果为 None 则自动生成
+
+#### 主要方法
+
+##### chat(user_input: str) -> str
+
+与 Agent 对话
+
+```python
+response = agent.chat("设置姓名为张三")
+```
+
+##### get_session_id() -> str
+
+获取当前会话 ID
+
+```python
+session_id = agent.get_session_id()
+```
+
+##### clear_history()
+
+清空当前会话的对话历史
+
+```python
+agent.clear_history()
+```
+
+##### get_message_count() -> int
+
+获取当前会话的消息数量
+
+```python
+count = agent.get_message_count()
 ```
 
 ### Field 类
@@ -268,14 +453,39 @@ engine.set_log_level(1)  # 只显示错误
 
 ```
 FormAgent/
-├── agentFrom.py      # 核心表单引擎实现
-└── README.md         # 项目文档
+├── agentFrom.py              # 核心表单引擎实现
+├── config.py                 # 配置文件
+├── main.py                  # 主入口文件
+├── requirements.txt          # 依赖列表
+├── .env.example             # 环境变量示例
+├── README.md                # 项目文档
+└── app/
+    ├── __init__.py
+    ├── core/
+    │   ├── __init__.py
+    │   ├── chat_history.py  # 对话历史管理
+    │   └── form_agent.py    # LangChain Agent 实现
+    └── tools/
+        ├── __init__.py
+        └── form_tools.py    # LangChain 工具函数
 ```
 
 ## 依赖项
 
-- Python 3.7+
+### 核心依赖
+
+- Python 3.11+
 - 标准库：`typing`, `collections`, `re`, `traceback`, `logging`
+
+### LangChain 依赖
+
+- `langchain==1.2.0` - LangChain 核心库
+- `langchain-core==1.2.0` - LangChain 核心模块
+- `langchain-openai==1.2.0` - OpenAI 集成
+- `openai==1.58.1` - OpenAI SDK
+- `pydantic==2.10.3` - 数据验证
+- `pydantic-settings==2.6.1` - 配置管理
+- `python-dotenv==1.0.1` - 环境变量管理
 
 ## 使用场景
 
@@ -284,6 +494,33 @@ FormAgent/
 - 字段间的级联更新
 - 条件性表单显示
 - 数据驱动的表单配置
+- 智能对话式表单填写
+- 自动化表单数据处理
+
+## 配置说明
+
+### 环境变量
+
+在 `.env` 文件中配置以下变量：
+
+```bash
+# LLM 配置
+LLM_MODEL=gpt-4o-mini              # 模型名称
+LLM_API_KEY=your_api_key_here      # OpenAI API Key
+LLM_BASE_URL=https://api.openai.com/v1  # API 基础 URL
+LLM_TEMPERATURE=0.7                # 温度参数
+
+# 表单引擎配置
+FORM_KEY_SEP=.                     # 嵌套字段分隔符
+FORM_LOG_LEVEL=2                   # 日志级别
+
+# 会话配置
+SESSION_MAX_MESSAGES=50            # 最大消息数
+SESSION_TIMEOUT=3600               # 会话超时时间（秒）
+
+# 调试配置
+DEBUG=false                        # 调试模式
+```
 
 ## 许可证
 
@@ -292,3 +529,8 @@ MIT License
 ## 贡献
 
 欢迎提交 Issue 和 Pull Request！
+
+## 参考资料
+
+- [LangChain 官方文档](https://docs.langchain.com/oss/python/langchain/overview)
+- [OpenAI API 文档](https://platform.openai.com/docs)

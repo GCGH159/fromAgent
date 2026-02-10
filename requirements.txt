@@ -1,0 +1,27 @@
+# FormAgent project dependencies
+# Python 3.11+
+
+# LangChain core libraries
+langchain==0.3.14
+langchain-core==0.3.29
+langchain-openai==0.2.14
+
+# OpenAI SDK
+openai==1.58.1
+
+# Data validation
+pydantic==2.10.3
+pydantic-settings==2.6.1
+
+# Environment variables management
+python-dotenv==1.0.1
+
+# HTTP client
+httpx==0.28.1
+requests==2.32.3
+
+# JSON processing
+orjson==3.10.12
+
+# Async support
+aiohttp==3.11.10
